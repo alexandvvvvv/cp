@@ -1,0 +1,142 @@
+N1: 1900, N2: 700000, D8: 69810, D9: 174525
+point 8
+./lab1-seq
+N=1900. Milliseconds passed: 10
+N=71710. Milliseconds passed: 447
+N=141520. Milliseconds passed: 928
+N=211330. Milliseconds passed: 1459
+N=281140. Milliseconds passed: 1964
+N=350950. Milliseconds passed: 2465
+N=420760. Milliseconds passed: 3019
+N=490570. Milliseconds passed: 3575
+N=560380. Milliseconds passed: 4129
+N=630190. Milliseconds passed: 4666
+N=700000. Milliseconds passed: 5260
+./lab1-par-1
+N=1900. Milliseconds passed: 10
+N=71710. Milliseconds passed: 454
+N=141520. Milliseconds passed: 957
+N=211330. Milliseconds passed: 1482
+N=281140. Milliseconds passed: 2020
+N=350950. Milliseconds passed: 2515
+N=420760. Milliseconds passed: 3011
+N=490570. Milliseconds passed: 3572
+N=560380. Milliseconds passed: 4144
+N=630190. Milliseconds passed: 4721
+N=700000. Milliseconds passed: 5288
+./lab1-par-2
+N=1900. Milliseconds passed: 9
+N=71710. Milliseconds passed: 419
+N=141520. Milliseconds passed: 909
+N=211330. Milliseconds passed: 1405
+N=281140. Milliseconds passed: 1866
+N=350950. Milliseconds passed: 2297
+N=420760. Milliseconds passed: 2780
+N=490570. Milliseconds passed: 3391
+N=560380. Milliseconds passed: 3833
+N=630190. Milliseconds passed: 4379
+N=700000. Milliseconds passed: 4859
+./lab1-par-4
+N=1900. Milliseconds passed: 9
+N=71710. Milliseconds passed: 416
+N=141520. Milliseconds passed: 830
+N=211330. Milliseconds passed: 1331
+N=281140. Milliseconds passed: 1767
+N=350950. Milliseconds passed: 2224
+N=420760. Milliseconds passed: 2759
+N=490570. Milliseconds passed: 3382
+N=560380. Milliseconds passed: 3733
+N=630190. Milliseconds passed: 4413
+N=700000. Milliseconds passed: 4855
+./lab1-par-8
+N=1900. Milliseconds passed: 59
+N=71710. Milliseconds passed: 439
+N=141520. Milliseconds passed: 940
+N=211330. Milliseconds passed: 1348
+N=281140. Milliseconds passed: 1887
+N=350950. Milliseconds passed: 2485
+N=420760. Milliseconds passed: 3176
+N=490570. Milliseconds passed: 3503
+N=560380. Milliseconds passed: 3882
+N=630190. Milliseconds passed: 4404
+N=700000. Milliseconds passed: 5087
+./lab1-par-16
+N=1900. Milliseconds passed: 42
+N=71710. Milliseconds passed: 478
+N=141520. Milliseconds passed: 899
+N=211330. Milliseconds passed: 1371
+N=281140. Milliseconds passed: 1830
+N=350950. Milliseconds passed: 2291
+N=420760. Milliseconds passed: 2871
+N=490570. Milliseconds passed: 3505
+N=560380. Milliseconds passed: 3907
+N=630190. Milliseconds passed: 4463
+N=700000. Milliseconds passed: 5062
+
+point 9
+./lab1-seq
+Result=288.448372
+N=1900. Milliseconds passed: 10
+Result=24804.113753
+N=176425. Milliseconds passed: 1280
+Result=49943.700106
+N=350950. Milliseconds passed: 2662
+Result=74516.661231
+N=525475. Milliseconds passed: 4317
+Result=99125.483240
+N=700000. Milliseconds passed: 6034
+./lab1-par-1
+Result=288.448372
+N=1900. Milliseconds passed: 11
+Result=24804.113753
+N=176425. Milliseconds passed: 1296
+Result=49943.700106
+N=350950. Milliseconds passed: 2757
+Result=74516.661231
+N=525475. Milliseconds passed: 4302
+Result=99125.483240
+N=700000. Milliseconds passed: 5866
+./lab1-par-2
+Result=288.448372
+N=1900. Milliseconds passed: 9
+Result=24804.113753
+N=176425. Milliseconds passed: 1217
+Result=49943.700106
+N=350950. Milliseconds passed: 2562
+Result=74516.661231
+N=525475. Milliseconds passed: 4000
+Result=99125.483240
+N=700000. Milliseconds passed: 5061
+./lab1-par-4
+Result=288.448372
+N=1900. Milliseconds passed: 9
+Result=24804.113753
+N=176425. Milliseconds passed: 1164
+Result=49943.700106
+N=350950. Milliseconds passed: 2287
+Result=74516.661231
+N=525475. Milliseconds passed: 3479
+Result=99125.483240
+N=700000. Milliseconds passed: 4854
+./lab1-par-8
+Result=288.448372
+N=1900. Milliseconds passed: 61
+Result=24804.113753
+N=176425. Milliseconds passed: 1113
+Result=49943.700106
+N=350950. Milliseconds passed: 2343
+Result=74516.661231
+N=525475. Milliseconds passed: 3552
+Result=99125.483240
+N=700000. Milliseconds passed: 4893
+./lab1-par-16
+Result=288.448372
+N=1900. Milliseconds passed: 42
+Result=24804.113753
+N=176425. Milliseconds passed: 1118
+Result=49943.700106
+N=350950. Milliseconds passed: 2283
+Result=74516.661231
+N=525475. Milliseconds passed: 3508
+Result=99125.483240
+N=700000. Milliseconds passed: 4930
