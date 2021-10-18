@@ -3,10 +3,12 @@
 #include <sys/time.h>
 #include <math.h>
 #include "./heapsort.c"
-
+#include "fwBase.h"
+#include "fwImage.h"
+#include "fwSignal.h"
 #define A 432
 
-void log_array(char* message, double * array, int size)
+void log_array(char* message, float * array, int size)
 {
   printf("\n%s", message);
   for (int i = 0; i < size; i++)
@@ -15,51 +17,42 @@ void log_array(char* message, double * array, int size)
   }
 }
 
-void fill_array(double * array, int size, unsigned int * seed, int min_value, int max_value) 
+void fill_array(float * array, int size, unsigned int * seed, int min_value, int max_value) 
 {
   for (int i = 0; i < size; i++) 
   {
-    double value = (double) rand_r(seed) / RAND_MAX; 
+    float value = (float) rand_r(seed) / RAND_MAX; 
     array[i] = min_value + value * (max_value - min_value);
   }
 }
 
-void map_M1(double * array, int size)
+void map_M1(float * array, int size)
 {
-  for (int i = 0; i < size; i++)
-  {
-    array[i] = tanh(array[i]) - 1;
-  }
+  fwsTanh_32f_A24(array, array, size);
+  fwsAddC_32f(array, -1, array, size);
 }
 
-void map_M2(double * array, int size)
+void map_M2(float * array, int size)
 {
-  double * copy = malloc(size * sizeof(double));
-  for (int i = 0; i < size; i++)
-  {
-    copy[i] = array[i];
-  }
-  
-  array[0] = abs(cos(copy[0]));
-  
-  for (int i = 1; i < size; i++)
-  {
-    array[i] = fabs(cos(copy[i] + copy[i - 1]));
-  }
+  float * copy = malloc(size * sizeof(float));
+  copy[0] = 0;
+  fwsCopy_32f(array, &copy[1], size - 1);
+
+  fwsAdd_32f(array, copy, array, size);
   free(copy);
+
+  fwsCos_32f_A24(array, array, size);
+  fwsAbs_32f_I(array, size);
 }
 
-void merge(double * src_array, double * dest_array, int dest_size)
+void merge(float * src_array, float * dest_array, int dest_size)
 {
-  for (int i = 0; i < dest_size; i++)
-  {
-    dest_array[i] = fmax(src_array[i], dest_array[i]);
-  }
+  fwsMaxEvery_32f_I(src_array, dest_array, dest_size);
 }
 
-double reduce(double * array, int size)
+float reduce(float * array, int size)
 {
-  double min_value = 1.0;
+  float min_value = 1.0;
   for (int i = 0; i < size; i++)
   {
     if (array[i] > 0)
@@ -69,7 +62,7 @@ double reduce(double * array, int size)
     }
   }
   
-  double result = 0.0;
+  float result = 0.0;
   for (int i = 0; i < size; i++)
   {
     if ((int)(array[i] / min_value) % 2 == 0)
@@ -82,7 +75,7 @@ double reduce(double * array, int size)
 
 int main(int argc, char* argv[])
 {
-  int N;
+  unsigned int N;
   unsigned int i;
   struct timeval T1, T2;
   long delta_ms;
@@ -90,9 +83,9 @@ int main(int argc, char* argv[])
   gettimeofday(&T1, NULL); 
   int m_size = N;
   int m2_size = N / 2;
-  double * M = malloc(m_size * sizeof(double));
-  double * M2 = malloc(m2_size * sizeof(double));
-  
+  float * M = malloc(m_size * sizeof(float));
+  float * M2 = malloc(m2_size * sizeof(float));
+  fwSetNumThreads(N);
   for (i=0; i<100; i++) 
   {
     unsigned int seed = i;
@@ -119,7 +112,7 @@ int main(int argc, char* argv[])
     
     //log_array("Sort: ", M2, m2_size);
     //------------ Reduce ---------------//
-    double result = reduce(M2, m2_size);
+    float result = reduce(M2, m2_size);
     printf("\nResult=%f", result);
   }
   

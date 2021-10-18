@@ -6,11 +6,11 @@
 struct MaxHeap
 {
     int size;
-    double* array;
+    float* array;
 };
 
 // A utility function to swap to integers
-void swap(double* a, double* b) { double t = *a; *a = *b;  *b = t; }
+void swap(float* a, float* b) { float t = *a; *a = *b;  *b = t; }
 
 // The main function to heapify a Max Heap. The function
 // assumes that everything under given root (element at
@@ -42,7 +42,7 @@ void maxHeapify(struct MaxHeap* maxHeap, int idx)
 }
 
 // A utility function to create a max heap of given capacity
-struct MaxHeap* createAndBuildHeap(double *array, int size)
+struct MaxHeap* createAndBuildHeap(float *array, int size)
 {
     int i;
     struct MaxHeap* maxHeap =
@@ -58,7 +58,7 @@ struct MaxHeap* createAndBuildHeap(double *array, int size)
 }
 
 // The main function to sort an array of given size
-void heapSort(double* array, int size)
+void heapSort(float* array, int size)
 {
     // Build a heap from the input data.
     struct MaxHeap* maxHeap = createAndBuildHeap(array, size);
