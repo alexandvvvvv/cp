@@ -76,35 +76,37 @@ float reduce(float * array, int size)
 int main(int argc, char* argv[])
 {
   unsigned int N;
+  unsigned int M;
   unsigned int i;
   struct timeval T1, T2;
   long delta_ms;
   N = atoi(argv[1]);
+  M = atoi(argv[2]);
   gettimeofday(&T1, NULL); 
-  int m_size = N;
+  int m1_size = N;
   int m2_size = N / 2;
-  float * M = malloc(m_size * sizeof(float));
+  float * M1 = malloc(m1_size * sizeof(float));
   float * M2 = malloc(m2_size * sizeof(float));
-  fwSetNumThreads(N);
+  fwSetNumThreads(M);
   for (i=0; i<100; i++) 
   {
     unsigned int seed = i;
     srand(seed);
     
     //----------- Generate --------------//
-    fill_array(M, m_size, &seed, 1, A);
+    fill_array(M1, m1_size, &seed, 1, A);
     fill_array(M2, m2_size, &seed, A, 10 * A);
 
-    //log_array("Initial M1: ", M, m_size);
+    //log_array("Initial M1: ", M1, m1_size);
     //log_array("Initial M2: ", M2, m2_size);
     //-------------- Map ----------------//
-    map_M1(M, m_size);
+    map_M1(M1, m1_size);
     map_M2(M2, m2_size);
     
-    //log_array("Map M1: ", M, m_size);
+    //log_array("Map M1: ", M1, m1_size);
     //log_array("Map M2: ", M2, m2_size);
     //------------- Merge ---------------//
-    merge(M, M2, m2_size);
+    merge(M1, M2, m2_size);
     
     //log_array("Merge: ", M2, m2_size);
     //------------- Sort ----------------//
@@ -120,7 +122,7 @@ int main(int argc, char* argv[])
   delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
   printf("\nN=%d. Milliseconds passed: %ld\n", N, delta_ms);
   
-  free(M);
+  free(M1);
   free(M2);
   
   return 0;
