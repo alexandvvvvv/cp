@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <math.h>
 #include "./heapsort.c"
+#include <omp.h>
 
 #define A 432
 
@@ -15,17 +16,23 @@ void log_array(char* message, double * array, int size)
   }
 }
 
-void fill_array(double * array, int size, unsigned int * seed, int min_value, int max_value) 
+void fill_array(double * array, int size, unsigned int seed, int min_value, int max_value) 
 {
+  #ifdef _OPENMP
+  #pragma omp parallel for default(none) private(seed) shared(array, size, min_value, max_value)
+  #endif
   for (int i = 0; i < size; i++) 
   {
-    double value = (double) rand_r(seed) / RAND_MAX; 
+    double value = (double) rand_r(&seed) / RAND_MAX; 
     array[i] = min_value + value * (max_value - min_value);
   }
 }
 
 void map_M1(double * array, int size)
 {
+  #ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(array, size)
+  #endif
   for (int i = 0; i < size; i++)
   {
     array[i] = tanh(array[i]) - 1;
@@ -35,22 +42,32 @@ void map_M1(double * array, int size)
 void map_M2(double * array, int size)
 {
   double * copy = malloc(size * sizeof(double));
-  for (int i = 0; i < size; i++)
+  copy[0] = 0;
+  #ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(copy, array, size)
+  #endif
+  for (int i = 1; i < size - 1; i++)
   {
-    copy[i] = array[i];
+    copy[i] = array[i - 1];
   }
   
   array[0] = abs(cos(copy[0]));
   
+  #ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(copy, array, size)
+  #endif
   for (int i = 1; i < size; i++)
   {
-    array[i] = fabs(cos(copy[i] + copy[i - 1]));
+    array[i] = fabs(cos(array[i] + copy[i]));
   }
   free(copy);
 }
 
 void merge(double * src_array, double * dest_array, int dest_size)
 {
+  #ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size)
+  #endif
   for (int i = 0; i < dest_size; i++)
   {
     dest_array[i] = fmax(src_array[i], dest_array[i]);
@@ -70,11 +87,14 @@ double reduce(double * array, int size)
   }
   
   double result = 0.0;
+  #ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(array, size, min_value) reduction(+: result)
+  #endif
   for (int i = 0; i < size; i++)
   {
     if ((int)(array[i] / min_value) % 2 == 0)
     {
-       result += sin(array[i]);
+        result += sin(array[i]);
     }
   }
   return result;
@@ -92,15 +112,17 @@ int main(int argc, char* argv[])
   int m2_size = N / 2;
   double * M = malloc(m_size * sizeof(double));
   double * M2 = malloc(m2_size * sizeof(double));
-  
+  #ifdef _OPENMP
+  omp_set_num_threads(4);
+  #endif
   for (i=0; i<100; i++) 
   {
     unsigned int seed = i;
     srand(seed);
     
     //----------- Generate --------------//
-    fill_array(M, m_size, &seed, 1, A);
-    fill_array(M2, m2_size, &seed, A, 10 * A);
+    fill_array(M, m_size, seed, 1, A);
+    fill_array(M2, m2_size, seed, A, 10 * A);
 
     //log_array("Initial M1: ", M, m_size);
     //log_array("Initial M2: ", M2, m2_size);
@@ -119,8 +141,8 @@ int main(int argc, char* argv[])
     
     //log_array("Sort: ", M2, m2_size);
     //------------ Reduce ---------------//
-    double result = reduce(M2, m2_size);
-    printf("\nResult=%f", result);
+    reduce(M2, m2_size);
+    //printf("\nResult=%f", result);
   }
   
   gettimeofday(&T2, NULL); 
