@@ -1,0 +1,12 @@
+Schedule guided, chunk_size: 2, optimization: 0
+N=1900. Milliseconds passed: 17
+N=71710. Milliseconds passed: 863
+N=141520. Milliseconds passed: 1826
+N=211330. Milliseconds passed: 2808
+N=281140. Milliseconds passed: 3717
+N=350950. Milliseconds passed: 4750
+N=420760. Milliseconds passed: 5746
+N=490570. Milliseconds passed: 6726
+N=560380. Milliseconds passed: 8029
+N=630190. Milliseconds passed: 9328
+N=700000. Milliseconds passed: 10118
