@@ -25,19 +25,19 @@ Write-Output "Checking compilation without OpenMP:"
 $output = & out/lab3_no_open_mp $n1
 Write-Output $output[-1]
 
-# Write-Output "N1: $n1, N2: $n2, D: $delta"
+Write-Output "N1: $n1, N2: $n2, D: $delta"
 
-# $results_file = 'lab3_results_no_schedule.txt'
-# Write-Output "Test without schedule" | tee $results_file
+$results_file = 'lab3_results_no_schedule.txt'
+Write-Output "Test without schedule" | tee $results_file
 
-# $binary = 'out/lab3_no_schedule'
-# foreach ($count in $threads_count) {
-#     Write-Output "Threads count: $count" | tee -a $results_file
-#     for ($n = $n1; $n -le $n2; $n += $delta) {
-#         $output = & $binary $n $count
-#         Write-Output $output[-1] | tee -a $results_file
-#     }
-# }
+$binary = 'out/lab3_no_schedule'
+foreach ($count in $threads_count) {
+    Write-Output "Threads count: $count" | tee -a $results_file
+    for ($n = $n1; $n -le $n2; $n += $delta) {
+        $output = & $binary $n $count
+        Write-Output $output[-1] | tee -a $results_file
+    }
+}
 
 $best_threads_count = 4
 $chunk_sizes = @(
