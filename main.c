@@ -113,7 +113,11 @@ int main(int argc, char* argv[])
   double * M = malloc(m_size * sizeof(double));
   double * M2 = malloc(m2_size * sizeof(double));
   #ifdef _OPENMP
-  omp_set_num_threads(4);
+  int threads_count = atoi(argv[2]);
+  omp_set_num_threads(threads_count);
+  #if defined(SCHEDULE) && defined(CHUNKS)
+  omp_set_schedule(SCHEDULE, CHUNKS);
+  #endif
   #endif
   for (i=0; i<100; i++) 
   {

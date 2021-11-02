@@ -1,0 +1,61 @@
+Test without schedule
+Threads count: 1
+N=1900. Milliseconds passed: 9
+N=71710. Milliseconds passed: 463
+N=141520. Milliseconds passed: 959
+N=211330. Milliseconds passed: 1478
+N=281140. Milliseconds passed: 1990
+N=350950. Milliseconds passed: 2512
+N=420760. Milliseconds passed: 3086
+N=490570. Milliseconds passed: 3739
+N=560380. Milliseconds passed: 4212
+N=630190. Milliseconds passed: 4885
+N=700000. Milliseconds passed: 5336
+Threads count: 2
+N=1900. Milliseconds passed: 9
+N=71710. Milliseconds passed: 386
+N=141520. Milliseconds passed: 806
+N=211330. Milliseconds passed: 1233
+N=281140. Milliseconds passed: 1701
+N=350950. Milliseconds passed: 2144
+N=420760. Milliseconds passed: 2645
+N=490570. Milliseconds passed: 3120
+N=560380. Milliseconds passed: 3604
+N=630190. Milliseconds passed: 4072
+N=700000. Milliseconds passed: 4574
+Threads count: 4
+N=1900. Milliseconds passed: 8
+N=71710. Milliseconds passed: 354
+N=141520. Milliseconds passed: 732
+N=211330. Milliseconds passed: 1181
+N=281140. Milliseconds passed: 1633
+N=350950. Milliseconds passed: 2024
+N=420760. Milliseconds passed: 2488
+N=490570. Milliseconds passed: 2895
+N=560380. Milliseconds passed: 3327
+N=630190. Milliseconds passed: 3765
+N=700000. Milliseconds passed: 4384
+Threads count: 8
+N=1900. Milliseconds passed: 125
+N=71710. Milliseconds passed: 463
+N=141520. Milliseconds passed: 857
+N=211330. Milliseconds passed: 1279
+N=281140. Milliseconds passed: 1710
+N=350950. Milliseconds passed: 2175
+N=420760. Milliseconds passed: 2677
+N=490570. Milliseconds passed: 3169
+N=560380. Milliseconds passed: 3756
+N=630190. Milliseconds passed: 4120
+N=700000. Milliseconds passed: 4653
+Threads count: 16
+N=1900. Milliseconds passed: 233
+N=71710. Milliseconds passed: 536
+N=141520. Milliseconds passed: 961
+N=211330. Milliseconds passed: 1332
+N=281140. Milliseconds passed: 1752
+N=350950. Milliseconds passed: 2204
+N=420760. Milliseconds passed: 2648
+N=490570. Milliseconds passed: 3152
+N=560380. Milliseconds passed: 3662
+N=630190. Milliseconds passed: 4214
+N=700000. Milliseconds passed: 4637
