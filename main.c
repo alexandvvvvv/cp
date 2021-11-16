@@ -3,7 +3,10 @@
 #include <sys/time.h>
 #include <math.h>
 #include "./heapsort.c"
+
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #define A 432
 
@@ -18,13 +21,7 @@ void log_array(char* message, double * array, int size)
 
 void fill_array(double * array, int size, unsigned int seed, int min_value, int max_value) 
 {
-  #ifdef _OPENMP
-    #if defined(SCHEDULE) && defined(CHUNKS)
-    _Pragma("omp parallel for default(none) private(seed) shared(array, size, min_value, max_value) schedule(runtime)")
-    #else
-    _Pragma("omp parallel for default(none) private(seed) shared(array, size, min_value, max_value)")
-    #endif
-  #endif
+  #pragma omp parallel for default(none) private(seed) shared(array, size, min_value, max_value) schedule(runtime)
   for (int i = 0; i < size; i++) 
   {
     double value = (double) rand_r(&seed) / RAND_MAX; 
@@ -34,13 +31,7 @@ void fill_array(double * array, int size, unsigned int seed, int min_value, int 
 
 void map_M1(double * array, int size)
 {
-  #ifdef _OPENMP
-    #if defined(SCHEDULE) && defined(CHUNKS)
-    _Pragma("omp parallel for default(none) shared(array, size) schedule(runtime)")
-    #else
-    _Pragma("omp parallel for default(none) shared(array, size)")
-    #endif
-  #endif
+  #pragma omp parallel for default(none) shared(array, size) schedule(runtime)
   for (int i = 0; i < size; i++)
   {
     array[i] = tanh(array[i]) - 1;
@@ -51,13 +42,7 @@ void map_M2(double * array, int size)
 {
   double * copy = malloc(size * sizeof(double));
   copy[0] = 0;
-  #ifdef _OPENMP
-    #if defined(SCHEDULE) && defined(CHUNKS)
-    _Pragma("omp parallel for default(none) shared(copy, array, size) schedule(runtime)")
-    #else
-    _Pragma("omp parallel for default(none) shared(copy, array, size)")
-    #endif
-  #endif
+  #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
   for (int i = 1; i < size - 1; i++)
   {
     copy[i] = array[i - 1];
@@ -65,13 +50,7 @@ void map_M2(double * array, int size)
   
   array[0] = abs(cos(copy[0]));
   
-  #ifdef _OPENMP
-    #if defined(SCHEDULE) && defined(CHUNKS)
-    _Pragma("omp parallel for default(none) shared(copy, array, size) schedule(runtime)")
-    #else
-    _Pragma("omp parallel for default(none) shared(copy, array, size)")
-    #endif
-  #endif
+  #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
   for (int i = 1; i < size; i++)
   {
     array[i] = fabs(cos(array[i] + copy[i]));
@@ -81,13 +60,7 @@ void map_M2(double * array, int size)
 
 void merge(double * src_array, double * dest_array, int dest_size)
 {
-  #ifdef _OPENMP
-    #if defined(SCHEDULE) && defined(CHUNKS)
-    _Pragma("omp parallel for default(none) shared(src_array, dest_array, dest_size) schedule(runtime)")
-    #else
-    _Pragma("omp parallel for default(none) shared(src_array, dest_array, dest_size)")
-    #endif
-  #endif
+  #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size) schedule(runtime)
   for (int i = 0; i < dest_size; i++)
   {
     dest_array[i] = fmax(src_array[i], dest_array[i]);
@@ -107,13 +80,7 @@ double reduce(double * array, int size)
   }
   
   double result = 0.0;
-  #ifdef _OPENMP
-    #if defined(SCHEDULE) && defined(CHUNKS)
-    _Pragma("omp parallel for default(none) shared(array, size, min_value) reduction(+: result) schedule(runtime)")
-    #else
-    _Pragma("omp parallel for default(none) shared(array, size, min_value) reduction(+: result)")
-    #endif
-  #endif
+  #pragma omp parallel for default(none) shared(array, size, min_value) reduction(+: result) schedule(runtime)
   for (int i = 0; i < size; i++)
   {
     if ((int)(array[i] / min_value) % 2 == 0)
