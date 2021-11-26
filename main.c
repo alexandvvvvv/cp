@@ -21,7 +21,6 @@ void log_array(char* message, double * array, int size)
 
 void fill_array(double * array, int size, unsigned int seed, int min_value, int max_value) 
 {
-  #pragma omp parallel for default(none) private(seed) shared(array, size, min_value, max_value) schedule(runtime)
   for (int i = 0; i < size; i++) 
   {
     double value = (double) rand_r(&seed) / RAND_MAX; 
@@ -31,7 +30,9 @@ void fill_array(double * array, int size, unsigned int seed, int min_value, int 
 
 void map_M1(double * array, int size)
 {
-  #pragma omp parallel for default(none) shared(array, size) schedule(runtime)
+#ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(array, size)// schedule(runtime)
+#endif
   for (int i = 0; i < size; i++)
   {
     array[i] = tanh(array[i]) - 1;
@@ -42,7 +43,9 @@ void map_M2(double * array, int size)
 {
   double * copy = malloc(size * sizeof(double));
   copy[0] = 0;
-  #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
+#ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(copy, array, size)// schedule(runtime)
+#endif
   for (int i = 1; i < size - 1; i++)
   {
     copy[i] = array[i - 1];
@@ -50,7 +53,9 @@ void map_M2(double * array, int size)
   
   array[0] = abs(cos(copy[0]));
   
-  #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
+#ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(copy, array, size)// schedule(runtime)
+#endif
   for (int i = 1; i < size; i++)
   {
     array[i] = fabs(cos(array[i] + copy[i]));
@@ -60,7 +65,9 @@ void map_M2(double * array, int size)
 
 void merge(double * src_array, double * dest_array, int dest_size)
 {
-  #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size) schedule(runtime)
+#ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size)// schedule(runtime)
+#endif
   for (int i = 0; i < dest_size; i++)
   {
     dest_array[i] = fmax(src_array[i], dest_array[i]);
@@ -80,7 +87,9 @@ double reduce(double * array, int size)
   }
   
   double result = 0.0;
-  #pragma omp parallel for default(none) shared(array, size, min_value) reduction(+: result) schedule(runtime)
+#ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(array, size, min_value) reduction(+: result) //schedule(runtime)
+#endif
   for (int i = 0; i < size; i++)
   {
     if ((int)(array[i] / min_value) % 2 == 0)
@@ -119,8 +128,8 @@ int main(int argc, char* argv[])
     fill_array(M, m_size, seed, 1, A);
     fill_array(M2, m2_size, seed, A, 10 * A);
 
-    //log_array("Initial M1: ", M, m_size);
-    //log_array("Initial M2: ", M2, m2_size);
+    // log_array("Initial M1: ", M, m_size);
+    // log_array("Initial M2: ", M2, m2_size);
     //-------------- Map ----------------//
     map_M1(M, m_size);
     map_M2(M2, m2_size);
@@ -137,7 +146,7 @@ int main(int argc, char* argv[])
     //log_array("Sort: ", M2, m2_size);
     //------------ Reduce ---------------//
     reduce(M2, m2_size);
-    //printf("\nResult=%f", result);
+    // printf("\nResult=%f", result);
   }
   
   gettimeofday(&T2, NULL); 
