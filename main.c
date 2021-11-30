@@ -30,9 +30,7 @@ void fill_array(double * array, int size, unsigned int seed, int min_value, int 
 
 void map_M1(double * array, int size)
 {
-#ifdef _OPENMP
-  #pragma omp parallel for default(none) shared(array, size)// schedule(runtime)
-#endif
+  #pragma omp parallel for default(none) shared(array, size) schedule(runtime)
   for (int i = 0; i < size; i++)
   {
     array[i] = tanh(array[i]) - 1;
@@ -43,9 +41,7 @@ void map_M2(double * array, int size)
 {
   double * copy = malloc(size * sizeof(double));
   copy[0] = 0;
-#ifdef _OPENMP
-  #pragma omp parallel for default(none) shared(copy, array, size)// schedule(runtime)
-#endif
+  #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
   for (int i = 1; i < size - 1; i++)
   {
     copy[i] = array[i - 1];
@@ -53,9 +49,7 @@ void map_M2(double * array, int size)
   
   array[0] = abs(cos(copy[0]));
   
-#ifdef _OPENMP
-  #pragma omp parallel for default(none) shared(copy, array, size)// schedule(runtime)
-#endif
+  #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
   for (int i = 1; i < size; i++)
   {
     array[i] = fabs(cos(array[i] + copy[i]));
@@ -65,9 +59,7 @@ void map_M2(double * array, int size)
 
 void merge(double * src_array, double * dest_array, int dest_size)
 {
-#ifdef _OPENMP
-  #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size)// schedule(runtime)
-#endif
+  #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size) schedule(runtime)
   for (int i = 0; i < dest_size; i++)
   {
     dest_array[i] = fmax(src_array[i], dest_array[i]);
@@ -87,9 +79,7 @@ double reduce(double * array, int size)
   }
   
   double result = 0.0;
-#ifdef _OPENMP
-  #pragma omp parallel for default(none) shared(array, size, min_value) reduction(+: result) //schedule(runtime)
-#endif
+  #pragma omp parallel for default(none) shared(array, size, min_value) reduction(+: result) schedule(runtime)
   for (int i = 0; i < size; i++)
   {
     if ((int)(array[i] / min_value) % 2 == 0)
