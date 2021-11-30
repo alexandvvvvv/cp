@@ -25,10 +25,10 @@ foreach ($schedule in $schedules) {
         $results_file = "lab3_results2_${schedule}_${size}_chunks.txt"
         $binary = "out/lab3_schedule_${schedule}_${size}"
         gcc -O3 -Wall -Werror main.c -lm -fopenmp "-DSCHEDULE=omp_sched_$schedule" "-DCHUNKS=$size" -o $binary
-        Write-Output "Schedule $schedule, chunk_size: $size" > $results_file
+        Write-Output "Schedule $schedule, chunk_size: $size" | tee $results_file
         for ($n = 1; $n -le $n1; $n ++) {
             $output = & $binary $n $best_threads_count
-            Write-Output $output[-1] >> $results_file
+            Write-Output $output[-1] | tee -a $results_file
         }
     }
 }
