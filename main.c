@@ -4,6 +4,7 @@
 #include <math.h>
 #include "./heapsort.c"
 #include <float.h>
+#include <unistd.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -19,6 +20,17 @@ void log_array(char* message, double * array, int size)
     printf("%f ", array[i]);
   }
 }
+
+#ifdef _OPENMP
+int omp_thread_count() {
+    
+    int n = 0;
+    #pragma omp parallel reduction(+:n)
+    n += 1;
+    return n;
+}
+#endif
+
 
 void fill_array(double * array, int size, int min_value, int max_value) 
 {
@@ -131,6 +143,8 @@ void sort(double * array, int size, int split_by_procs_num) {
   double ** temp = malloc(chunks * sizeof(double *));
 
   #ifdef _OPENMP
+  int initial_threads = omp_thread_count();
+  omp_set_num_threads(chunks);
   #pragma omp parallel for default(none) shared(chunks, sizes, temp, array) schedule(runtime)
   #endif
   for (int i = 0; i < chunks; i++) {
@@ -149,6 +163,10 @@ void sort(double * array, int size, int split_by_procs_num) {
     heapSort(temp[i], sizes[i]);
     //log_array("sub array: ", temp[i], sizes[i]);
   }
+  
+  #ifdef _OPENMP
+  omp_set_num_threads(initial_threads);
+  #endif
   
   //-------- use sub arrays to get sorted array --------
   int * visited_indecies = malloc(size * sizeof(int));
@@ -203,11 +221,17 @@ int main(int argc, char* argv[])
   omp_set_schedule(SCHEDULE, CHUNKS);
   #endif
   #endif
-  for (i=0; i<1; i++) 
+  int iterations = 100;
+  #ifdef _OPENMP
+  #pragma omp parallel
+  #pragma omp sections
+  {
+  #pragma omp section
+  #endif
+  for (i=0; i<iterations; i++) 
   {    
     //----------- Generate --------------//
     fill_array(M, m_size, 1, A);
-    sort(M, m_size, 0);
     fill_array(M2, m2_size, A, 10 * A);
 
     //log_array("Initial M1: ", M, m_size);
@@ -223,13 +247,26 @@ int main(int argc, char* argv[])
     
     //log_array("Merge: ", M2, m2_size);
     //------------- Sort ----------------//
-    heapSort(M2, m2_size);
+    sort(M2, m2_size, 0);
     
     //log_array("Sort: ", M2, m2_size);
     //------------ Reduce ---------------//
-    double result = reduce(M2, m2_size);
-    printf("\nResult=%f", result);
+    reduce(M2, m2_size);
+    
+    //double result = reduce(M2, m2_size);
+    //printf("\nResult=%f", result);
   }
+  #ifdef _OPENMP
+  #pragma omp section
+  {
+    while (i < iterations) {
+      double progress = (double)i / iterations * 100;
+      printf("Progress: %.2f\%%\n", progress);
+      sleep(1);
+    }
+  }
+  }
+  #endif
   
   #ifdef _OPENMP
   T2 = omp_get_wtime();
