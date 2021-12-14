@@ -33,19 +33,18 @@ int omp_thread_count() {
 #endif
 
 
-void fill_array(double * array, int size, int min_value, int max_value, unsigned int seed) 
+void fill_array(double * array, int size, int min_value, int max_value, unsigned int * seed) 
 {
   #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(array, size, min_value, max_value, seed) schedule(guided, 4)
   #endif
   for (int i = 0; i < size; i++) 
   {
-    srand(cos(i) * 1000);
-    double value = (double) rand_r(&seed) / RAND_MAX; 
+    double value = (double) rand_r(seed) / RAND_MAX; 
     array[i] = min_value + value * (max_value - min_value);
   }
 
-  // log_array("", array, size);
+  //log_array("", array, size);
 }
 
 void map_M1(double * array, int size)
@@ -77,7 +76,7 @@ void map_M2(double * array, int size)
 
 void merge(double * src_array, double * dest_array, int dest_size)
 {
-#ifdef _OPENMP
+  #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size) schedule(guided, 4)
   #endif
   for (int i = 0; i < dest_size; i++)
@@ -205,16 +204,12 @@ int main(int argc, char* argv[])
   gettimeofday(&T1, NULL); 
   #endif
   
-  int m_size = N;
-  int m2_size = N / 2;
-  double * M = malloc(m_size * sizeof(double));
-  double * M2 = malloc(m2_size * sizeof(double));
   #ifdef _OPENMP
   int threads_count = atoi(argv[2]);
   omp_set_num_threads(threads_count);
   omp_set_nested(1);
   #endif
-  int iterations = 100;
+  int iterations = 1;
   // double result;
 #ifdef _OPENMP
   #pragma omp parallel sections
@@ -223,33 +218,109 @@ int main(int argc, char* argv[])
   {
   T1 = omp_get_wtime();
   #endif
+  int m_size = N;
+  int m2_size = N / 2;
+
+  double * M = malloc(m_size * sizeof(double));
+  double * M2 = malloc(m2_size * sizeof(double));
+
   for (i=0; i<iterations; i++) 
   {    
+  unsigned int seed = i;
+    srand(seed*seed);
     //----------- Generate --------------//
-    fill_array(M, m_size, 1, A, i);
-    fill_array(M2, m2_size, A, 10 * A, i);
-
+    #ifdef _OPENMP
+    T1 = omp_get_wtime();
+    #else 
+    gettimeofday(&T1, NULL);
+    #endif
+    fill_array(M, m_size, 1, A, &seed);
+    fill_array(M2, m2_size, A, 10 * A, &seed);
+    
+    #ifdef _OPENMP
+    T2 = omp_get_wtime();
+    delta_ms = 1000*(T2) - (T1) * 1000;
+    #else 
+    gettimeofday(&T2, NULL);
+    delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
+    #endif
+    printf("elapsed: %ld\n", delta_ms);
+    
     //log_array("Initial M1: ", M, m_size);
     //log_array("Initial M2: ", M2, m2_size);
     //-------------- Map ----------------//
+    #ifdef _OPENMP
+    T1 = omp_get_wtime();
+    #else 
+    gettimeofday(&T1, NULL);
+    #endif
     map_M1(M, m_size);
     map_M2(M2, m2_size);
     
+    #ifdef _OPENMP
+    T2 = omp_get_wtime();
+    delta_ms = 1000*(T2) - (T1) * 1000;
+    #else 
+    gettimeofday(&T2, NULL);
+    delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
+    #endif
+    printf("elapsed: %ld\n", delta_ms);
     //log_array("Map M1: ", M, m_size);
     //log_array("Map M2: ", M2, m2_size);
     //------------- Merge ---------------//
+    #ifdef _OPENMP
+    T1 = omp_get_wtime();
+    #else 
+    gettimeofday(&T1, NULL);
+    #endif
     merge(M, M2, m2_size);
     
+    #ifdef _OPENMP
+    T2 = omp_get_wtime();
+    delta_ms = 1000*(T2) - (T1) * 1000;
+    #else 
+    gettimeofday(&T2, NULL);
+    delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
+    #endif
+    printf("elapsed: %ld\n", delta_ms);
     //log_array("Merge: ", M2, m2_size);
     //------------- Sort ----------------//
-    sort(M2, m2_size, 0);
-    
+    #ifdef _OPENMP
+    T1 = omp_get_wtime();
+    #else 
+    gettimeofday(&T1, NULL);
+    #endif
+    //sort(M2, m2_size, 0);
+    //heapSort(M2, m2_size);
+    #ifdef _OPENMP
+    T2 = omp_get_wtime();
+    delta_ms = 1000*(T2) - (T1) * 1000;
+    #else 
+    gettimeofday(&T2, NULL);
+    delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
+    #endif
+    printf("elapsed: %ld\n", delta_ms);
     //log_array("Sort: ", M2, m2_size);
     //------------ Reduce ---------------//
+    #ifdef _OPENMP
+    T1 = omp_get_wtime();
+    #else 
+    gettimeofday(&T1, NULL);
+    #endif
     reduce(M2, m2_size);
     
+    #ifdef _OPENMP
+    T2 = omp_get_wtime();
+    delta_ms = 1000*(T2) - (T1) * 1000;
+    #else 
+    gettimeofday(&T2, NULL);
+    delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
+    #endif
+    printf("elapsed: %ld\n", delta_ms);
     // result = reduce(M2, m2_size);
   }
+  free(M);
+  free(M2);
   // printf("\nResult=%f", result);
   #ifdef _OPENMP
   T2 = omp_get_wtime();
@@ -276,8 +347,6 @@ int main(int argc, char* argv[])
   
   printf("\nN=%d. Milliseconds passed: %ld\n", N, delta_ms);
   
-  free(M);
-  free(M2);
   
   return 0;
 }
