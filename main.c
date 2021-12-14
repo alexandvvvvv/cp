@@ -33,18 +33,19 @@ int omp_thread_count() {
 #endif
 
 
-void fill_array(double * array, int size, int min_value, int max_value) 
+void fill_array(double * array, int size, int min_value, int max_value, unsigned int seed) 
 {
-  unsigned int seed = cos(size) * 10000;
-  srand(seed);
   #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(array, size, min_value, max_value, seed) schedule(guided, 4)
   #endif
   for (int i = 0; i < size; i++) 
   {
+    srand(cos(i) * 1000);
     double value = (double) rand_r(&seed) / RAND_MAX; 
     array[i] = min_value + value * (max_value - min_value);
   }
+
+  // log_array("", array, size);
 }
 
 void map_M1(double * array, int size)
@@ -226,8 +227,8 @@ int main(int argc, char* argv[])
   for (i=0; i<iterations; i++) 
   {    
     //----------- Generate --------------//
-    fill_array(M, m_size, 1, A);
-    fill_array(M2, m2_size, A, 10 * A);
+    fill_array(M, m_size, 1, A, i);
+    fill_array(M2, m2_size, A, 10 * A, i);
 
     //log_array("Initial M1: ", M, m_size);
     //log_array("Initial M2: ", M2, m2_size);
