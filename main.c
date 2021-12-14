@@ -34,13 +34,13 @@ int omp_thread_count() {
 
 void fill_array(double * array, int size, int min_value, int max_value) 
 {
-#ifdef _OPENMP
-  #pragma omp parallel for default(none) shared(array, size, min_value, max_value) schedule(guided, 4)
+  unsigned int seed = cos(size) * 10000;
+  srand(seed);
+  #ifdef _OPENMP
+  #pragma omp parallel for default(none) shared(array, size, min_value, max_value, seed) schedule(guided, 4)
   #endif
   for (int i = 0; i < size; i++) 
   {
-    unsigned int seed = cos(i) * 10000;
-    srand(seed);
     double value = (double) rand_r(&seed) / RAND_MAX; 
     array[i] = min_value + value * (max_value - min_value);
   }
@@ -227,6 +227,7 @@ int main(int argc, char* argv[])
   #pragma omp sections
   {
   #pragma omp section
+  {
   #endif
   for (i=0; i<iterations; i++) 
   {    
@@ -257,6 +258,12 @@ int main(int argc, char* argv[])
     //printf("\nResult=%f", result);
   }
   #ifdef _OPENMP
+  T2 = omp_get_wtime();
+  delta_ms = 1000*(T2) - (T1) * 1000;
+  }
+  #endif
+
+  #ifdef _OPENMP
   #pragma omp section
   {
     while (i < iterations) {
@@ -268,10 +275,7 @@ int main(int argc, char* argv[])
   }
   #endif
   
-  #ifdef _OPENMP
-  T2 = omp_get_wtime();
-  delta_ms = 1000*(T2) - (T1) * 1000;
-  #else
+  #ifndef _OPENMP
   gettimeofday(&T2, NULL); 
   delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
   #endif
