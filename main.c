@@ -34,9 +34,7 @@ int omp_thread_count() {
 
 void fill_array(double * array, int size, int min_value, int max_value) 
 {
-  #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(array, size, min_value, max_value) schedule(runtime)
-  #endif
   for (int i = 0; i < size; i++) 
   {
     unsigned int seed = cos(i) * 10000;
@@ -48,9 +46,7 @@ void fill_array(double * array, int size, int min_value, int max_value)
 
 void map_M1(double * array, int size)
 {
-  #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(array, size) schedule(runtime)
-  #endif
   for (int i = 0; i < size; i++)
   {
     array[i] = tanh(array[i]) - 1;
@@ -61,9 +57,7 @@ void map_M2(double * array, int size)
 {
   double * copy = malloc(size * sizeof(double));
   copy[0] = 0;
-  #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
-  #endif
   for (int i = 1; i < size - 1; i++)
   {
     copy[i] = array[i - 1];
@@ -71,9 +65,7 @@ void map_M2(double * array, int size)
   
   array[0] = abs(cos(copy[0]));
   
-  #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(copy, array, size) schedule(runtime)
-  #endif
   for (int i = 1; i < size; i++)
   {
     array[i] = fabs(cos(array[i] + copy[i]));
@@ -83,9 +75,7 @@ void map_M2(double * array, int size)
 
 void merge(double * src_array, double * dest_array, int dest_size)
 {
-  #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(src_array, dest_array, dest_size) schedule(runtime)
-  #endif
   for (int i = 0; i < dest_size; i++)
   {
     dest_array[i] = fmax(src_array[i], dest_array[i]);
@@ -105,9 +95,7 @@ double reduce(double * array, int size)
   }
   
   double result = 0.0;
-  #ifdef _OPENMP
   #pragma omp parallel for default(none) shared(array, size, min_value) reduction(+: result) schedule(runtime)
-  #endif
   for (int i = 0; i < size; i++)
   {
     if ((int)(array[i] / min_value) % 2 == 0)
@@ -145,8 +133,8 @@ void sort(double * array, int size, int split_by_procs_num) {
   #ifdef _OPENMP
   int initial_threads = omp_thread_count();
   omp_set_num_threads(chunks);
-  #pragma omp parallel for default(none) shared(chunks, sizes, temp, array) schedule(runtime)
   #endif
+  #pragma omp parallel for default(none) shared(chunks, sizes, temp, array) schedule(runtime)
   for (int i = 0; i < chunks; i++) {
     temp[i] = malloc(sizes[i] * sizeof(double));
     
@@ -222,12 +210,10 @@ int main(int argc, char* argv[])
   #endif
   #endif
   int iterations = 100;
-  #ifdef _OPENMP
   #pragma omp parallel
   #pragma omp sections
   {
   #pragma omp section
-  #endif
   for (i=0; i<iterations; i++) 
   {    
     //----------- Generate --------------//
@@ -256,7 +242,6 @@ int main(int argc, char* argv[])
     //double result = reduce(M2, m2_size);
     //printf("\nResult=%f", result);
   }
-  #ifdef _OPENMP
   #pragma omp section
   {
     while (i < iterations) {
@@ -266,7 +251,6 @@ int main(int argc, char* argv[])
     }
   }
   }
-  #endif
   
   #ifdef _OPENMP
   T2 = omp_get_wtime();
