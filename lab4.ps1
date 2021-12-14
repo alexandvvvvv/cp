@@ -5,11 +5,10 @@
 # Ubuntu 21.04
 # gcc version 10.3.0
 ##
-$n0 = 10000
-$n1 = 100000
-# $n1 = 1900
+$n0 = 1900
+$n1 = 5000
 $n2 = 700000
-$delta0 = ($n1 - $n0) / 100
+$delta0 = ($n1 - $n0) / 25
 $delta = ($n2 - $n1) / 10
 
 $results_file = "lab4_results0_seq.txt"
@@ -17,7 +16,8 @@ $binary = "out/lab4_seq"
 gcc -O3 -Wall -Werror main.c -lm -o $binary
 Write-Output "Starting" | tee $results_file
 for ($n = $n0; $n -le $n1; $n += $delta0) {
-    & $binary $n 4 | tee -a $results_file
+    $output = & $binary $n 4
+    Write-Output $output[-1] | tee -a $results_file
 }
 
 $results_file = "lab4_results0_parall.txt"
