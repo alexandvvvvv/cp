@@ -201,9 +201,7 @@ int main(int argc, char* argv[])
   long delta_ms;
   N = atoi(argv[1]);
   
-  #ifdef _OPENMP
-  T1 = omp_get_wtime();
-  #else
+  #ifndef _OPENMP
   gettimeofday(&T1, NULL); 
   #endif
   
@@ -223,6 +221,7 @@ int main(int argc, char* argv[])
   {
   #pragma omp section
   {
+  T1 = omp_get_wtime();
   #endif
   for (i=0; i<iterations; i++) 
   {    
