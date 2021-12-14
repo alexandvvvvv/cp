@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
   omp_set_num_threads(threads_count);
   #endif
   int iterations = 100;
-  double result;
+  // double result;
 #ifdef _OPENMP
   #pragma omp parallel
   #pragma omp sections
@@ -247,11 +247,11 @@ int main(int argc, char* argv[])
     
     //log_array("Sort: ", M2, m2_size);
     //------------ Reduce ---------------//
-    // reduce(M2, m2_size);
+    reduce(M2, m2_size);
     
-    result = reduce(M2, m2_size);
+    // result = reduce(M2, m2_size);
   }
-  printf("\nResult=%f", result);
+  // printf("\nResult=%f", result);
   #ifdef _OPENMP
   T2 = omp_get_wtime();
   delta_ms = 1000*(T2) - (T1) * 1000;
@@ -261,11 +261,11 @@ int main(int argc, char* argv[])
   #ifdef _OPENMP
   #pragma omp section
   {
-    while (i < iterations) {
-      double progress = (double)i / iterations * 100;
-      printf("Progress: %.2f\%%\n", progress);
-      sleep(1);
-    }
+    // while (i < iterations) {
+    //   double progress = (double)i / iterations * 100;
+    //   printf("Progress: %.2f\%%\n", progress);
+    //   sleep(1);
+    // }
   }
   }
   #endif
@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
   delta_ms = 1000*(T2.tv_sec - T1.tv_sec) + (T2.tv_usec - T1.tv_usec) / 1000;
   #endif
   
-  printf("\nN=%d. Milliseconds passed: %ld\n", N, delta_ms);
+  printf("N=%d. Milliseconds passed: %ld\n", N, delta_ms);
   
   free(M);
   free(M2);
