@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <math.h>
 #include "./heapsort.c"
@@ -59,16 +60,8 @@ void map_M1(double * array, int size)
 
 void map_M2(double * array, int size)
 {
-  double * copy = malloc(size * sizeof(double));
-  copy[0] = 0;
-#ifdef _OPENMP
-  #pragma omp parallel for default(none) shared(copy, array, size) schedule(guided, 4)
-  #endif
-  for (int i = 1; i < size - 1; i++)
-  {
-    copy[i] = array[i - 1];
-  }
-  
+  double * copy = calloc(size, sizeof(double));
+  memcpy(copy + 1, array, sizeof(double) * (size - 1));
   array[0] = abs(cos(copy[0]));
   
 #ifdef _OPENMP
