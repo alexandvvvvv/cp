@@ -215,6 +215,7 @@ int main(int argc, char* argv[])
   omp_set_num_threads(threads_count);
   #endif
   int iterations = 100;
+  double result;
 #ifdef _OPENMP
   #pragma omp parallel
   #pragma omp sections
@@ -245,11 +246,11 @@ int main(int argc, char* argv[])
     
     //log_array("Sort: ", M2, m2_size);
     //------------ Reduce ---------------//
-    reduce(M2, m2_size);
+    // reduce(M2, m2_size);
     
-    //double result = reduce(M2, m2_size);
-    //printf("\nResult=%f", result);
+    result = reduce(M2, m2_size);
   }
+  printf("\nResult=%f", result);
   #ifdef _OPENMP
   T2 = omp_get_wtime();
   delta_ms = 1000*(T2) - (T1) * 1000;
