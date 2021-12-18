@@ -308,11 +308,11 @@ int main(int argc, char* argv[])
   #ifdef _OPENMP
   #pragma omp section
   {
-    // while (i < iterations) {
-    //   double progress = (double)i / iterations * 100;
-    //   printf("Progress: %.2f\%%\n", progress);
-    //   sleep(1);
-    // }
+    while (i < iterations) {
+      double progress = (double)i / iterations * 100;
+      printf("Progress: %.2f\%%\n", progress);
+      sleep(1);
+    }
   }
   }
   #endif
