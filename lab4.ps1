@@ -5,25 +5,20 @@
 # Ubuntu 21.04
 # gcc version 10.3.0
 ##
-$n0 = 1900
-$n1 = 5000
+$nx = 266000
+$n1 = 1900
 $n2 = 700000
-$delta0 = ($n1 - $n0) / 25
-$delta = ($n2 - $n1) / 10
+$minN = [math]::Min($nx / 2, $n1)
+$delta = ($n2 - $minN) / 10
 
-$results_file = "lab4_results0_seq.txt"
-$binary = "out/lab4_seq"
-gcc -O3 -Wall -Werror main.c -lm -o $binary
-Write-Output "Starting" | tee $results_file
-for ($n = $n0; $n -le $n1; $n += $delta0) {
-    $output = & $binary $n 4
-    Write-Output $output[-1] | tee -a $results_file
-}
-
-$results_file = "lab4_results0_parall.txt"
 $binary = "out/lab4"
 gcc -O3 -Wall -Werror main.c -lm -fopenmp -o $binary
-Write-Output "Starting" | tee $results_file
-for ($n = $n0; $n -le $n1; $n += $delta0) {
-    & $binary $n 4 | tee -a $results_file
+for ($i = 1; $i -le 10; ++$i) {
+    $results_file = "lab4_results1_$i.txt"
+    Write-Output "Starting" | tee $results_file
+    for ($n = $minN; $n -le $n2; $n += $delta) {
+        $output = & $binary $n 4
+        Write-Output $output[-1] | tee -a $results_file
+    }    
 }
+
