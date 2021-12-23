@@ -310,7 +310,7 @@ int main(int argc, char* argv[])
   {
     while (i < iterations) {
       double progress = (double)i / iterations * 100;
-      printf("Progress: %.2f\%%\n", progress);
+      printf("Progress: %.2f%%\n", progress);
       sleep(1);
     }
   }
