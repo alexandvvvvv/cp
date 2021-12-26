@@ -229,8 +229,8 @@ void stop_timer(struct timeval *T1)
 {
   struct timeval T2;
   gettimeofday(&T2, NULL);
-  long delta_ms = 1000*(T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
-  printf("elapsed: %ld\n", delta_ms);
+  long delta_ms = 1000 * (T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
+  // printf("elapsed: %ld\n", delta_ms);
 }
 
 void *print_progress(void *i)
@@ -292,20 +292,20 @@ int main(int argc, char *argv[])
 
     //----------- Generate --------------//
     start_timer(&T1);
-    if (is_parallel)
-    {
-      compute_multi_thread(M, M2, m_size, num_threads, fill_array, chunk_size);
-      compute_multi_thread(M, M2, m2_size, num_threads, fill_array2, chunk_size);
-    }
-    else
-    {
+    // if (is_parallel)
+    // {
+    //   compute_multi_thread(M, M2, m_size, num_threads, fill_array, chunk_size);
+    //   compute_multi_thread(M, M2, m2_size, num_threads, fill_array2, chunk_size);
+    // }
+    // else
+    // {
       fill_array(get_full_chunk(M, NULL, m_size));
       fill_array2(get_full_chunk(NULL, M2, m2_size));
-    }
+    // }
     stop_timer(&T1);
 
-    // log_array("Initial M1: ", M, m_size);
-    // log_array("Initial M2: ", M2, m2_size);
+    log_array("Initial M1: ", M, m_size);
+    log_array("Initial M2: ", M2, m2_size);
 
     //-------------- Map ----------------//
     start_timer(&T1);
@@ -324,8 +324,8 @@ int main(int argc, char *argv[])
     }
     free(copy);
     stop_timer(&T1);
-    log_array("Map M1: ", M, m_size);
-    log_array("Map M2: ", M2, m2_size);
+    // log_array("Map M1: ", M, m_size);
+    // log_array("Map M2: ", M2, m2_size);
 
     //------------- Merge ---------------//
     start_timer(&T1);
