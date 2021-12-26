@@ -311,16 +311,16 @@ int main(int argc, char *argv[])
     start_timer(&T1);
     copy = calloc(m2_size, sizeof(double));
     memcpy(copy + 1, M2, sizeof(double) * (m2_size - 1));
-    M2[0] = fabs(cos(M2[0]));
+    copy[0] = 0;
     if (is_parallel)
     {
       compute_multi_thread(M, M2, m_size, num_threads, map_M1, chunk_size);
-      compute_multi_thread(M, M2 + 1, m2_size - 1, num_threads, map_M2, chunk_size);
+      compute_multi_thread(M, M2, m2_size, num_threads, map_M2, chunk_size);
     }
     else
     {
       map_M1(get_full_chunk(M, M2, m_size));
-      map_M2(get_full_chunk(M, M2 + 1, m2_size - 1));
+      map_M2(get_full_chunk(M, M2, m2_size));
     }
     free(copy);
     stop_timer(&T1);
