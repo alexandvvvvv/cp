@@ -59,47 +59,91 @@ void map_M2(Chunk_t chunk)
   }
 }
 
-void merge(double *src_array, double *dest_array, int dest_size)
+void merge(Chunk_t chunk)
 {
-#ifdef _OPENMP
-#pragma omp parallel for default(none) shared(src_array, dest_array, dest_size) schedule(guided, 4)
-#endif
-  for (int i = 0; i < dest_size; i++)
+  for (int i = chunk.offset; i < chunk.offset + chunk.count; i++)
   {
-    dest_array[i] = fmax(src_array[i], dest_array[i]);
+    chunk.array2[i] = fmax(chunk.array2[i], chunk.array1[i]);
   }
 }
 
-double reduce(double *array, int size)
+double reductionMin(double a, double b)
 {
-  double min_value = 1.0;
-  for (int i = 0; i < size; i++)
-  {
-    if (array[i] > 0)
-    {
-      min_value = array[i];
-      break;
-    }
-  }
+  if (isnan(b))
+    return a;
+  return MIN(a, b);
+}
 
-  double result = 0.0;
-#ifdef _OPENMP
-#pragma omp parallel for default(none) shared(array, size, min_value) reduction(+ \
-                                                                                : result) schedule(guided, 4)
-#endif
-  for (int i = 0; i < size; i++)
+double reductionSum(double a, double b)
+{
+  if (isnan(b))
+    return a;
+  return a + b;
+}
+
+double get_min_positive(Chunk_t chunk)
+{
+  double result = DBL_MAX;
+  double *M2 = chunk.array1;
+  for (long j = chunk.offset; j < chunk.offset + chunk.count; j++)
   {
-    if ((int)(array[i] / min_value) % 2 == 0)
+    if (M2[j] > 0 && M2[j] < result)
     {
-      result += sin(array[i]);
+      result = M2[j];
     }
   }
   return result;
 }
 
-void sort(double *array, int size, int split_by_procs_num)
+double get_sinus_sum(Chunk_t chunk)
 {
-  int chunks = 2;
+  double result = 0.0;
+  double *M2 = chunk.array1;
+  double min_value = chunk.array2[0];
+
+  for (long j = chunk.offset; j < chunk.offset + chunk.count; j++)
+  {
+    if (((long)(M2[j] / min_value)) % 2 == 0)
+    {
+      result += sin(M2[j]);
+    }
+  }
+  return result;
+}
+
+typedef struct
+{
+  double **temp;
+  double *initial_array;
+  double index;
+  int *sizes;
+} SortInfo_t;
+
+void sort_part(void *args)
+{
+  SortInfo_t info = *(SortInfo_t *)args;
+  int i = info.index;
+
+  info.temp[i] = malloc(info.sizes[i] * sizeof(double));
+
+  int start = 0;
+
+  for (int j = 0; j < i; j++)
+  {
+    start += info.sizes[j];
+  }
+
+  for (int j = 0; j < info.sizes[i]; j++)
+  {
+    info.temp[i][j] = info.initial_array[start + j];
+  }
+
+  heapSort(info.temp[i], info.sizes[i]);
+}
+
+void sort(double *array, int size)
+{
+  int chunks = 4;
 
   //------------ calculate sub-arrays sizes ---------
   int *sizes = malloc(chunks * sizeof(int));
@@ -112,33 +156,39 @@ void sort(double *array, int size, int split_by_procs_num)
     sizes[i] = min_size;
 
     if (inc_size > i)
+    {
       sizes[i] = sizes[i] + 1;
+    }
   }
 
   //------------- fill & sort sub-arrays -----------------
   double **temp = malloc(chunks * sizeof(double *));
 
+  pthread_t *threads = malloc(chunks * sizeof(pthread_t));
+
+  SortInfo_t *info = malloc(chunks * sizeof(SortInfo_t));
   for (int i = 0; i < chunks; i++)
   {
-    temp[i] = malloc(sizes[i] * sizeof(double));
-
-    int start = 0;
-
-    for (int j = 0; j < i; j++)
-    {
-      start += sizes[j];
-    }
-
-    for (int j = 0; j < sizes[i]; j++)
-    {
-      temp[i][j] = array[start + j];
-    }
-
-    heapSort(temp[i], sizes[i]);
+    info[i].initial_array = array;
+    info[i].sizes = sizes;
+    info[i].temp = temp;
+    info[i].index = i;
+    pthread_create(&threads[i], NULL, (void *)sort_part, (void *)&info[i]);
   }
+  for (int i = 0; i < chunks; i++)
+  {
+    pthread_join(threads[i], NULL);
+  }
+  free(threads);
+  free(info);
 
   //-------- use sub arrays to get sorted array --------
-  int *visited_indecies = malloc(size * sizeof(int));
+  int *visited_indecies = malloc(chunks * sizeof(int));
+
+  for (int i = 0; i < chunks; i++)
+  {
+    visited_indecies[i] = 0;
+  }
 
   for (int i = 0; i < size; i++)
   {
@@ -149,7 +199,7 @@ void sort(double *array, int size, int split_by_procs_num)
     {
       int offset = visited_indecies[j];
 
-      if (offset < sizeof(temp[j]))
+      if (offset < sizes[j])
       {
         if (next_value > temp[j][offset])
         {
@@ -177,10 +227,10 @@ void start_timer(struct timeval *T1)
 }
 void stop_timer(struct timeval *T1)
 {
-  // struct timeval T2;
-  // gettimeofday(&T2, NULL);
-  // long delta_ms = 1000*(T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
-  // printf("elapsed: %ld\n", delta_ms);
+  struct timeval T2;
+  gettimeofday(&T2, NULL);
+  long delta_ms = 1000*(T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
+  printf("elapsed: %ld\n", delta_ms);
 }
 
 void *print_progress(void *i)
@@ -234,6 +284,7 @@ int main(int argc, char *argv[])
   pthread_t progress_thread;
   pthread_create(&progress_thread, NULL, print_progress, &i);
 
+  double result;
   for (i = 0; i < ITERATIONS; i++)
   {
     seed = i;
@@ -243,16 +294,16 @@ int main(int argc, char *argv[])
     start_timer(&T1);
     if (is_parallel)
     {
-      multiThreadComputing(M, M2, m_size, num_threads, fill_array, chunk_size);
-      multiThreadComputing(M, M2, m2_size, num_threads, fill_array2, chunk_size);
+      compute_multi_thread(M, M2, m_size, num_threads, fill_array, chunk_size);
+      compute_multi_thread(M, M2, m2_size, num_threads, fill_array2, chunk_size);
     }
     else
     {
-      fill_array(fullChunk(M, NULL, m_size));
-      fill_array2(fullChunk(NULL, M2, m2_size));
+      fill_array(get_full_chunk(M, NULL, m_size));
+      fill_array2(get_full_chunk(NULL, M2, m2_size));
     }
     stop_timer(&T1);
-    
+
     // log_array("Initial M1: ", M, m_size);
     // log_array("Initial M2: ", M2, m2_size);
 
@@ -263,13 +314,13 @@ int main(int argc, char *argv[])
     copy[0] = 0;
     if (is_parallel)
     {
-      multiThreadComputing(M, M2, m_size, num_threads, map_M1, chunk_size);
-      multiThreadComputing(M, M2, m2_size, num_threads, map_M2, chunk_size);
+      compute_multi_thread(M, M2, m_size, num_threads, map_M1, chunk_size);
+      compute_multi_thread(M, M2, m2_size, num_threads, map_M2, chunk_size);
     }
     else
     {
-      map_M1(fullChunk(M, M2, m_size));
-      map_M2(fullChunk(M, M2, m2_size));
+      map_M1(get_full_chunk(M, M2, m_size));
+      map_M2(get_full_chunk(M, M2, m2_size));
     }
     free(copy);
     stop_timer(&T1);
@@ -278,26 +329,43 @@ int main(int argc, char *argv[])
 
     //------------- Merge ---------------//
     start_timer(&T1);
-    merge(M, M2, m2_size);
+    if (is_parallel)
+    {
+      compute_multi_thread(M, M2, m2_size, num_threads, merge, chunk_size);
+    }
+    else
+    {
+      merge(get_full_chunk(M, M2, m2_size));
+    }
     stop_timer(&T1);
-    //log_array("Merge: ", M2, m2_size);
+    // log_array("Merge: ", M2, m2_size);
 
     //------------- Sort ----------------//
     start_timer(&T1);
-    sort(M2, m2_size, 1);
+    sort(M2, m2_size);
     // heapSort(M2, m2_size);
     stop_timer(&T1);
-    //log_array("Sort: ", M2, m2_size);
+    // log_array("Sort: ", M2, m2_size);
 
     //------------ Reduce ---------------//
     start_timer(&T1);
-    reduce(M2, m2_size);
+    if (is_parallel)
+    {
+      double minPositive = reduce_multi_thread(M2, NULL, m2_size, num_threads, get_min_positive, reductionMin, DBL_MAX,
+                                               chunk_size);
+      result = reduce_multi_thread(M2, &minPositive, m2_size, num_threads, get_sinus_sum, reductionSum, 0,
+                                   chunk_size);
+    }
+    else
+    {
+      double minPositive = get_min_positive(get_full_chunk(M2, NULL, m2_size));
+      result = get_sinus_sum(get_full_chunk(M2, &minPositive, m2_size));
+    }
     stop_timer(&T1);
-    // result = reduce(M2, m2_size);
   }
   free(M);
   free(M2);
-  // printf("\nResult=%f", result);
+  printf("\nResult=%f", result);
 
   gettimeofday(&T2, NULL);
   pthread_join(progress_thread, NULL);

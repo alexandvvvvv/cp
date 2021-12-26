@@ -26,7 +26,7 @@ long chunkSize;
 double reductionResult;
 double (*reductionFunction)(double, double);
 
-Chunk_t getNextChunk(int threadId, double intermediateReductionResult)
+Chunk_t get_next_chunk(int threadId, double intermediateReductionResult)
 {
     pthread_mutex_lock(&mutex);
     if (reductionFunction != NULL)
@@ -52,7 +52,7 @@ Chunk_t getNextChunk(int threadId, double intermediateReductionResult)
     return ans;
 }
 
-Chunk_t fullChunk(double *_array1, double *_array2, long size)
+Chunk_t get_full_chunk(double *_array1, double *_array2, long size)
 {
     Chunk_t chunk;
     chunk.array1 = _array1;
@@ -62,20 +62,20 @@ Chunk_t fullChunk(double *_array1, double *_array2, long size)
     return chunk;
 }
 
-void threadFunc(void *args)
+void execute_thread(void *args)
 {
     ThreadInfo_t info = *(ThreadInfo_t *)args;
-    Chunk_t chunk = getNextChunk(info.threadId, NAN);
+    Chunk_t chunk = get_next_chunk(info.threadId, NAN);
     double (*f)(Chunk_t);
     f = info.func;
     while (chunk.count > 0)
     {
         double intermediateRes = f(chunk);
-        chunk = getNextChunk(info.threadId, intermediateRes);
+        chunk = get_next_chunk(info.threadId, intermediateRes);
     }
 }
 
-double multiThreadComputingReduction(double *_array1, double *_array2, long _arrayLength, int threadsNum, void *func,
+double reduce_multi_thread(double *_array1, double *_array2, long _arrayLength, int threadsNum, void *func,
                                      void *_reductionFunction, double reductionInitValue, int _chunkSize)
 {
     pthread_mutex_init(&mutex, NULL);
@@ -95,7 +95,7 @@ double multiThreadComputingReduction(double *_array1, double *_array2, long _arr
     {
         info[j].threadId = j + 1;
         info[j].func = func;
-        pthread_create(&thread[j], NULL, (void *)threadFunc, (void *)(info + j));
+        pthread_create(&thread[j], NULL, (void *)execute_thread, (void *)(info + j));
     }
 
     for (int i = 0; i < threadsNum; i++)
@@ -110,9 +110,9 @@ double multiThreadComputingReduction(double *_array1, double *_array2, long _arr
     return reductionResult;
 }
 
-double multiThreadComputing(double *_array1, double *_array2, long _arrayLength, int threadsNum, void *func,
+double compute_multi_thread(double *_array1, double *_array2, long _arrayLength, int threadsNum, void *func,
                             int _chunkSize)
 {
-    return multiThreadComputingReduction(_array1, _array2, _arrayLength, threadsNum, func,
+    return reduce_multi_thread(_array1, _array2, _arrayLength, threadsNum, func,
                                          NULL, NAN, _chunkSize);
 }
