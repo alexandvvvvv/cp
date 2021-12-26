@@ -229,7 +229,7 @@ void stop_timer(struct timeval *T1)
 {
   struct timeval T2;
   gettimeofday(&T2, NULL);
-  long delta_ms = 1000 * (T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
+  // long delta_ms = 1000 * (T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
   // printf("elapsed: %ld\n", delta_ms);
 }
 
@@ -304,8 +304,8 @@ int main(int argc, char *argv[])
     // }
     stop_timer(&T1);
 
-    log_array("Initial M1: ", M, m_size);
-    log_array("Initial M2: ", M2, m2_size);
+    // log_array("Initial M1: ", M, m_size);
+    // log_array("Initial M2: ", M2, m2_size);
 
     //-------------- Map ----------------//
     start_timer(&T1);

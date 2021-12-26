@@ -36,7 +36,7 @@ Chunk_t get_next_chunk(int threadId, double intermediateReductionResult)
     Chunk_t ans;
     ans.array1 = array1;
     ans.array2 = array2;
-    
+
     if (currentOffset >= arrayLength)
     {
         ans.count = 0;
@@ -76,10 +76,9 @@ void execute_thread(void *args)
 }
 
 double reduce_multi_thread(double *_array1, double *_array2, long _arrayLength, int threadsNum, void *func,
-                                     void *_reductionFunction, double reductionInitValue, int _chunkSize)
+                           void *_reductionFunction, double reductionInitValue, int _chunkSize)
 {
     pthread_mutex_init(&mutex, NULL);
-
     pthread_t *thread = malloc(threadsNum * sizeof(pthread_t));
     ThreadInfo_t *info = malloc(threadsNum * sizeof(ThreadInfo_t));
 
@@ -106,7 +105,6 @@ double reduce_multi_thread(double *_array1, double *_array2, long _arrayLength, 
     free(thread);
     free(info);
     pthread_mutex_destroy(&mutex);
-
     return reductionResult;
 }
 
@@ -114,5 +112,5 @@ double compute_multi_thread(double *_array1, double *_array2, long _arrayLength,
                             int _chunkSize)
 {
     return reduce_multi_thread(_array1, _array2, _arrayLength, threadsNum, func,
-                                         NULL, NAN, _chunkSize);
+                               NULL, NAN, _chunkSize);
 }
