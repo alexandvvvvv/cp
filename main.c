@@ -10,7 +10,7 @@
 #include "./parallel.c"
 
 #define A 432
-#define ITERATIONS 1
+#define ITERATIONS 100
 unsigned int seed;
 double *copy;
 
