@@ -311,21 +311,21 @@ int main(int argc, char *argv[])
     start_timer(&T1);
     copy = calloc(m2_size, sizeof(double));
     memcpy(copy + 1, M2, sizeof(double) * (m2_size - 1));
-    copy[0] = 0;
+    M2[0] = fabs(cos(M2[0]));
     if (is_parallel)
     {
       compute_multi_thread(M, M2, m_size, num_threads, map_M1, chunk_size);
-      compute_multi_thread(M, M2, m2_size, num_threads, map_M2, chunk_size);
+      compute_multi_thread(M, M2 + 1, m2_size - 1, num_threads, map_M2, chunk_size);
     }
     else
     {
       map_M1(get_full_chunk(M, M2, m_size));
-      map_M2(get_full_chunk(M, M2, m2_size));
+      map_M2(get_full_chunk(M, M2 + 1, m2_size - 1));
     }
     free(copy);
     stop_timer(&T1);
-    // log_array("Map M1: ", M, m_size);
-    // log_array("Map M2: ", M2, m2_size);
+    log_array("Map M1: ", M, m_size);
+    log_array("Map M2: ", M2, m2_size);
 
     //------------- Merge ---------------//
     start_timer(&T1);
