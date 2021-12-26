@@ -12,6 +12,7 @@
 #define A 432
 #define ITERATIONS 1
 unsigned int seed;
+double *copy;
 
 void log_array(char *message, double *array, int size)
 {
@@ -42,31 +43,20 @@ void fill_array2(Chunk_t chunk)
   }
 }
 
-void map_M1(double *array, int size)
+void map_M1(Chunk_t chunk)
 {
-#ifdef _OPENMP
-#pragma omp parallel for default(none) shared(array, size) schedule(guided, 4)
-#endif
-  for (int i = 0; i < size; i++)
+  for (int i = chunk.offset; i < chunk.offset + chunk.count; i++)
   {
-    array[i] = tanh(array[i]) - 1;
+    chunk.array1[i] = tanh(chunk.array1[i]) - 1;
   }
 }
 
-void map_M2(double *array, int size)
+void map_M2(Chunk_t chunk)
 {
-  double *copy = calloc(size, sizeof(double));
-  memcpy(copy + 1, array, sizeof(double) * (size - 1));
-  array[0] = abs(cos(copy[0]));
-
-#ifdef _OPENMP
-#pragma omp parallel for default(none) shared(copy, array, size) schedule(guided, 4)
-#endif
-  for (int i = 1; i < size; i++)
+  for (int i = chunk.offset; i < chunk.offset + chunk.count; i++)
   {
-    array[i] = fabs(cos(array[i] + copy[i]));
+    chunk.array2[i] = fabs(cos(chunk.array2[i] + copy[i]));
   }
-  free(copy);
 }
 
 void merge(double *src_array, double *dest_array, int dest_size)
@@ -181,26 +171,10 @@ void sort(double *array, int size, int split_by_procs_num)
   free(visited_indecies);
 }
 
-#ifdef _OPENMP
-void start_timer(double *T1)
-{
-  *T1 = omp_get_wtime();
-}
-#else
 void start_timer(struct timeval *T1)
 {
   gettimeofday(T1, NULL);
 }
-#endif
-
-#ifdef _OPENMP
-void stop_timer(double *T1)
-{
-  // double T2 = omp_get_wtime();
-  // long delta_ms = 1000*(T2) - (*T1) * 1000;
-  // printf("elapsed: %ld\n", delta_ms);
-}
-#else
 void stop_timer(struct timeval *T1)
 {
   // struct timeval T2;
@@ -208,7 +182,6 @@ void stop_timer(struct timeval *T1)
   // long delta_ms = 1000*(T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
   // printf("elapsed: %ld\n", delta_ms);
 }
-#endif
 
 void *print_progress(void *i)
 {
@@ -279,14 +252,29 @@ int main(int argc, char *argv[])
       fill_array2(fullChunk(NULL, M2, m2_size));
     }
     stop_timer(&T1);
+    
+    // log_array("Initial M1: ", M, m_size);
+    // log_array("Initial M2: ", M2, m2_size);
 
     //-------------- Map ----------------//
     start_timer(&T1);
-    map_M1(M, m_size);
-    map_M2(M2, m2_size);
+    copy = calloc(m2_size, sizeof(double));
+    memcpy(copy + 1, M2, sizeof(double) * (m2_size - 1));
+    copy[0] = 0;
+    if (is_parallel)
+    {
+      multiThreadComputing(M, M2, m_size, num_threads, map_M1, chunk_size);
+      multiThreadComputing(M, M2, m2_size, num_threads, map_M2, chunk_size);
+    }
+    else
+    {
+      map_M1(fullChunk(M, M2, m_size));
+      map_M2(fullChunk(M, M2, m2_size));
+    }
+    free(copy);
     stop_timer(&T1);
-    //log_array("Map M1: ", M, m_size);
-    //log_array("Map M2: ", M2, m2_size);
+    // log_array("Map M1: ", M, m_size);
+    // log_array("Map M2: ", M2, m2_size);
 
     //------------- Merge ---------------//
     start_timer(&T1);
