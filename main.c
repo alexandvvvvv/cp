@@ -6,12 +6,14 @@
 #include "./heapsort.c"
 #include <float.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 #define A 432
+#define ITERATIONS 100
 
 void log_array(char *message, double *array, int size)
 {
@@ -230,113 +232,87 @@ void stop_timer(struct timeval *T1)
 }
 #endif
 
+void *print_progress(void *i)
+{
+  while ((*(int*)i) < ITERATIONS)
+  {
+    double progress = (double)(*(int*)i) / ITERATIONS * 100;
+    printf("Progress: %.2f%%\n", progress);
+    sleep(1);
+  }
+
+  return 0;
+}
+
 int main(int argc, char *argv[])
 {
   int N;
   unsigned int i;
 
-#ifdef _OPENMP
-  double T0, T1, T2;
-#else
   struct timeval T0, T1, T2;
-#endif
 
   long delta_ms;
   N = atoi(argv[1]);
 
-#ifndef _OPENMP
   gettimeofday(&T0, NULL);
   gettimeofday(&T1, NULL);
-#endif
+  int m_size = N;
+  int m2_size = N / 2;
 
-#ifdef _OPENMP
-  int threads_count = atoi(argv[2]);
-  omp_set_num_threads(threads_count);
-  omp_set_nested(1);
-#endif
-  int iterations = 10;
-  // double result;
-#ifdef _OPENMP
-#pragma omp parallel sections
+  double *M = malloc(m_size * sizeof(double));
+  double *M2 = malloc(m2_size * sizeof(double));
+
+  pthread_t progress_thread;
+  pthread_create(&progress_thread, NULL, print_progress, &i);
+
+  for (i = 0; i < ITERATIONS; i++)
   {
-#pragma omp section
-    {
-      T1 = omp_get_wtime();
-      T0 = omp_get_wtime();
-#endif
-      int m_size = N;
-      int m2_size = N / 2;
+    unsigned int seed = i;
+    srand(seed * seed);
 
-      double *M = malloc(m_size * sizeof(double));
-      double *M2 = malloc(m2_size * sizeof(double));
+    //----------- Generate --------------//
+    start_timer(&T1);
+    fill_array(M, m_size, 1, A, &seed);
+    fill_array(M2, m2_size, A, 10 * A, &seed);
+    stop_timer(&T1);
 
-      for (i = 0; i < iterations; i++)
-      {
-        unsigned int seed = i;
-        srand(seed * seed);
+    //log_array("Initial M1: ", M, m_size);
+    //log_array("Initial M2: ", M2, m2_size);
 
-        //----------- Generate --------------//
-        start_timer(&T1);
-        fill_array(M, m_size, 1, A, &seed);
-        fill_array(M2, m2_size, A, 10 * A, &seed);
-        stop_timer(&T1);
+    //-------------- Map ----------------//
+    start_timer(&T1);
+    map_M1(M, m_size);
+    map_M2(M2, m2_size);
+    stop_timer(&T1);
+    //log_array("Map M1: ", M, m_size);
+    //log_array("Map M2: ", M2, m2_size);
 
-        //log_array("Initial M1: ", M, m_size);
-        //log_array("Initial M2: ", M2, m2_size);
+    //------------- Merge ---------------//
+    start_timer(&T1);
+    merge(M, M2, m2_size);
+    stop_timer(&T1);
+    //log_array("Merge: ", M2, m2_size);
 
-        //-------------- Map ----------------//
-        start_timer(&T1);
-        map_M1(M, m_size);
-        map_M2(M2, m2_size);
-        stop_timer(&T1);
-        //log_array("Map M1: ", M, m_size);
-        //log_array("Map M2: ", M2, m2_size);
+    //------------- Sort ----------------//
+    start_timer(&T1);
+    sort(M2, m2_size, 1);
+    // heapSort(M2, m2_size);
+    stop_timer(&T1);
+    //log_array("Sort: ", M2, m2_size);
 
-        //------------- Merge ---------------//
-        start_timer(&T1);
-        merge(M, M2, m2_size);
-        stop_timer(&T1);
-        //log_array("Merge: ", M2, m2_size);
-
-        //------------- Sort ----------------//
-        start_timer(&T1);
-        sort(M2, m2_size, 1);
-        // heapSort(M2, m2_size);
-        stop_timer(&T1);
-        //log_array("Sort: ", M2, m2_size);
-
-        //------------ Reduce ---------------//
-        start_timer(&T1);
-        reduce(M2, m2_size);
-        stop_timer(&T1);
-        // result = reduce(M2, m2_size);
-      }
-      free(M);
-      free(M2);
-// printf("\nResult=%f", result);
-#ifdef _OPENMP
-      T2 = omp_get_wtime();
-      delta_ms = 1000 * (T2) - (T0)*1000;
-    }
-#endif
-
-#ifdef _OPENMP
-#pragma omp section
-    {
-      while (i < iterations)
-      {
-        double progress = (double)i / iterations * 100;
-        printf("Progress: %.2f%%\n", progress);
-        sleep(1);
-      }
-    }
+    //------------ Reduce ---------------//
+    start_timer(&T1);
+    reduce(M2, m2_size);
+    stop_timer(&T1);
+    // result = reduce(M2, m2_size);
   }
-#endif
+  free(M);
+  free(M2);
+  // printf("\nResult=%f", result);
 
-#ifndef _OPENMP
+  pthread_join(progress_thread, NULL);
   gettimeofday(&T2, NULL);
   delta_ms = 1000 * (T2.tv_sec - T0.tv_sec) + (T2.tv_usec - T0.tv_usec) / 1000;
-#endif
 
   printf("\nN=%d. Milliseconds passed: %ld\n", N, delta_ms);
 
