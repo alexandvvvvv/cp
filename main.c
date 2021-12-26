@@ -7,13 +7,11 @@
 #include <float.h>
 #include <unistd.h>
 #include <pthread.h>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include "./parallel.c"
 
 #define A 432
-#define ITERATIONS 100
+#define ITERATIONS 1
+unsigned int seed;
 
 void log_array(char *message, double *array, int size)
 {
@@ -24,30 +22,24 @@ void log_array(char *message, double *array, int size)
   }
 }
 
-#ifdef _OPENMP
-int omp_thread_count()
+void fill_array(Chunk_t chunk)
 {
-
-  int n = 0;
-#pragma omp parallel reduction(+ \
-                               : n)
-  n += 1;
-  return n;
-}
-#endif
-
-void fill_array(double *array, int size, int min_value, int max_value, unsigned int *seed)
-{
-#ifdef _OPENMP
-#pragma omp parallel for default(none) shared(array, size, min_value, max_value, seed) schedule(guided, 4)
-#endif
-  for (int i = 0; i < size; i++)
+  int N = chunk.offset + chunk.count;
+  for (int i = chunk.offset; i < N; i++)
   {
-    double value = (double)rand_r(seed) / RAND_MAX;
-    array[i] = min_value + value * (max_value - min_value);
+    double value = (double)rand_r(&seed) / RAND_MAX;
+    chunk.array1[i] = 1 + value * (A - 1);
   }
+}
 
-  //log_array("", array, size);
+void fill_array2(Chunk_t chunk)
+{
+  int N = chunk.offset + chunk.count;
+  for (int i = chunk.offset; i < N; i++)
+  {
+    double value = (double)rand_r(&seed) / RAND_MAX;
+    chunk.array2[i] = A + value * (9 * A);
+  }
 }
 
 void map_M1(double *array, int size)
@@ -119,13 +111,6 @@ void sort(double *array, int size, int split_by_procs_num)
 {
   int chunks = 2;
 
-#ifdef _OPENMP
-  if (split_by_procs_num)
-  {
-    chunks = omp_get_num_procs();
-  }
-#endif
-
   //------------ calculate sub-arrays sizes ---------
   int *sizes = malloc(chunks * sizeof(int));
 
@@ -143,14 +128,6 @@ void sort(double *array, int size, int split_by_procs_num)
   //------------- fill & sort sub-arrays -----------------
   double **temp = malloc(chunks * sizeof(double *));
 
-#ifdef _OPENMP
-  int initial_threads = omp_thread_count();
-  omp_set_num_threads(chunks);
-#endif
-
-#ifdef _OPENMP
-#pragma omp parallel for default(none) shared(chunks, sizes, temp, array) schedule(guided, 4)
-#endif
   for (int i = 0; i < chunks; i++)
   {
     temp[i] = malloc(sizes[i] * sizeof(double));
@@ -168,21 +145,10 @@ void sort(double *array, int size, int split_by_procs_num)
     }
 
     heapSort(temp[i], sizes[i]);
-    //log_array("sub array: ", temp[i], sizes[i]);
   }
-
-#ifdef _OPENMP
-  omp_set_num_threads(initial_threads);
-#endif
 
   //-------- use sub arrays to get sorted array --------
   int *visited_indecies = malloc(size * sizeof(int));
-
-  //do we need that ?
-  for (int i = 0; i < chunks; i++)
-  {
-    visited_indecies[i] = 0;
-  }
 
   for (int i = 0; i < size; i++)
   {
@@ -191,16 +157,28 @@ void sort(double *array, int size, int split_by_procs_num)
 
     for (int j = 0; j < chunks; j++)
     {
-      if (visited_indecies[j] < sizes[j] && next_value > temp[j][visited_indecies[j]])
+      int offset = visited_indecies[j];
+
+      if (offset < sizeof(temp[j]))
       {
-        next_value = temp[j][visited_indecies[j]];
-        taken_from = j;
+        if (next_value > temp[j][offset])
+        {
+          next_value = temp[j][offset];
+          taken_from = j;
+        }
       }
     }
-    //printf("next value = %f, taken_from = %d\n", next_value, taken_from);
     array[i] = next_value;
     visited_indecies[taken_from] = visited_indecies[taken_from] + 1;
   }
+
+  free(sizes);
+  for (int i = 0; i < chunks; i++)
+  {
+    free(temp[i]);
+  }
+  free(temp);
+  free(visited_indecies);
 }
 
 #ifdef _OPENMP
@@ -234,9 +212,9 @@ void stop_timer(struct timeval *T1)
 
 void *print_progress(void *i)
 {
-  while ((*(int*)i) < ITERATIONS)
+  while ((*(int *)i) < ITERATIONS)
   {
-    double progress = (double)(*(int*)i) / ITERATIONS * 100;
+    double progress = (double)(*(int *)i) / ITERATIONS * 100;
     printf("Progress: %.2f%%\n", progress);
     sleep(1);
   }
@@ -262,22 +240,45 @@ int main(int argc, char *argv[])
   double *M = malloc(m_size * sizeof(double));
   double *M2 = malloc(m2_size * sizeof(double));
 
+  char *end;
+  int num_threads = 1, is_parallel = 0, chunk_size = 4;
+  if (argc > 2)
+  {
+    num_threads = (int)strtol(argv[2], &end, 10);
+    if (num_threads > 1)
+    {
+      is_parallel = 1;
+    }
+    else
+    {
+      if (argc > 3)
+      {
+        chunk_size = (int)strtol(argv[3], &end, 10);
+      }
+    }
+  }
+
   pthread_t progress_thread;
   pthread_create(&progress_thread, NULL, print_progress, &i);
 
   for (i = 0; i < ITERATIONS; i++)
   {
-    unsigned int seed = i;
+    seed = i;
     srand(seed * seed);
 
     //----------- Generate --------------//
     start_timer(&T1);
-    fill_array(M, m_size, 1, A, &seed);
-    fill_array(M2, m2_size, A, 10 * A, &seed);
+    if (is_parallel)
+    {
+      multiThreadComputing(M, M2, m_size, num_threads, fill_array, chunk_size);
+      multiThreadComputing(M, M2, m2_size, num_threads, fill_array2, chunk_size);
+    }
+    else
+    {
+      fill_array(fullChunk(M, NULL, m_size));
+      fill_array2(fullChunk(NULL, M2, m2_size));
+    }
     stop_timer(&T1);
-
-    //log_array("Initial M1: ", M, m_size);
-    //log_array("Initial M2: ", M2, m2_size);
 
     //-------------- Map ----------------//
     start_timer(&T1);
@@ -310,8 +311,8 @@ int main(int argc, char *argv[])
   free(M2);
   // printf("\nResult=%f", result);
 
-  pthread_join(progress_thread, NULL);
   gettimeofday(&T2, NULL);
+  pthread_join(progress_thread, NULL);
   delta_ms = 1000 * (T2.tv_sec - T0.tv_sec) + (T2.tv_usec - T0.tv_usec) / 1000;
 
   printf("\nN=%d. Milliseconds passed: %ld\n", N, delta_ms);
