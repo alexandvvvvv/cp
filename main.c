@@ -201,17 +201,17 @@ void start_timer(struct timeval* T1)
 #ifdef _OPENMP
 void stop_timer(double* T1)
 {
-  // double T2 = omp_get_wtime();
-  // long delta_ms = 1000*(T2) - (*T1) * 1000;
-  // printf("elapsed: %ld\n", delta_ms);
+  double T2 = omp_get_wtime();
+  long delta_ms = 1000*(T2) - (*T1) * 1000;
+  printf("elapsed: %ld\n", delta_ms);
 }
 #else
 void stop_timer(struct timeval* T1)
 {
-  // struct timeval T2;
-  // gettimeofday(&T2, NULL);
-  // long delta_ms = 1000*(T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
-  // printf("elapsed: %ld\n", delta_ms);
+  struct timeval T2;
+  gettimeofday(&T2, NULL);
+  long delta_ms = 1000*(T2.tv_sec - T1->tv_sec) + (T2.tv_usec - T1->tv_usec) / 1000;
+  printf("elapsed: %ld\n", delta_ms);
 }
 #endif
 
@@ -239,8 +239,8 @@ int main(int argc, char* argv[])
   omp_set_num_threads(threads_count);
   omp_set_nested(1);
   #endif
-  int iterations = 10;
-  // double result;
+  int iterations = 1;
+  double result;
 #ifdef _OPENMP
   #pragma omp parallel sections
   {
@@ -292,13 +292,13 @@ int main(int argc, char* argv[])
 
     //------------ Reduce ---------------//
     start_timer(&T1);
-    reduce(M2, m2_size);
+    // reduce(M2, m2_size);
+    result = reduce(M2, m2_size);
     stop_timer(&T1);
-    // result = reduce(M2, m2_size);
   }
   free(M);
   free(M2);
-  // printf("\nResult=%f", result);
+  printf("\nResult=%f", result);
   #ifdef _OPENMP
   T2 = omp_get_wtime();
   delta_ms = 1000*(T2) - (T0) * 1000;
